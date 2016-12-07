@@ -1,13 +1,10 @@
 package com.bomb.jparrott.Drawing;
 
 
-import org.newdawn.slick.AppGameContainer;
-import org.newdawn.slick.BasicGame;
-import org.newdawn.slick.GameContainer;
-import org.newdawn.slick.Graphics;
-import org.newdawn.slick.ScalableGame;
-import org.newdawn.slick.SlickException;
-import org.newdawn.slick.geom.Vector2f;
+import org.dyn4j.collision.narrowphase.Sat;
+import org.dyn4j.dynamics.Body;
+import org.dyn4j.geometry.*;
+import org.newdawn.slick.*;
 
 import java.io.File;
 
@@ -17,15 +14,29 @@ import java.io.File;
 public class Main extends BasicGame {
 
     static AppGameContainer app;
-    float x = 20;
-    float y = 25;
-    Square square;
+    static int draw = 3;
+    Sat sat = new Sat();
+    Vector2 dot;
 
-    Vector2f v1 = new Vector2f(8,13);
-    Vector2f v2 = v1.getPerpendicular();
+    Ship ship;
+    Triangle triangle;
+    Rectangle base, left, right, top;
+    Rectangle[] walls;
+    Body body;
 
-    public static void drawVectory(Graphics g, Vector2f v, float x, float y){
-        g.drawLine(x, y, x + v.getX(), y + v.getY());
+    public static void drawPolygon(Graphics g, Polygon polygon){
+
+        float originX, originY, currentX, currentY, newX, newY;
+
+        Vector2[] points = polygon.getVertices();
+        originX = (float)points[0].x;
+        originY = (float)points[0].y;
+
+        for(int i = 0; i < points.length - 1; i++){
+            g.drawLine((float) points[i].x, (float) points[i].y, (float) points[i + 1].x, (float) points[i + 1].y);
+        }
+        g.drawLine((float)points[points.length - 1].x, (float)points[points.length - 1].y, originX, originY);
+
     }
 
     public static void main(String[] args) {
@@ -34,11 +45,11 @@ public class Main extends BasicGame {
             System.setProperty("java.library.path", "./lib/");
             System.setProperty("org.lwjgl.librarypath", new File("lib/natives/natives-windows").getAbsolutePath());
 
-            app = new AppGameContainer(new ScalableGame(new Main("Drawing Game"),100,100));
+            app = new AppGameContainer(new ScalableGame(new Main("Drawing Game"), 500, 500));
             //app.setDisplayMode(640, 480, false);
-            app.setDisplayMode(500, 500, false);
+            app.setDisplayMode(1080, 1080, false);
 
-            app.setShowFPS(false);
+            app.setShowFPS(true);
             app.setTargetFrameRate(60);
             app.start();
 
@@ -58,24 +69,36 @@ public class Main extends BasicGame {
 
     @Override
     public void init(GameContainer gameContainer) throws SlickException {
-        Vector2f v1 =  new Vector2f(26, 7);
-        Vector2f v2 = v1.getPerpendicular();
-        v2.scale(2);
+        ship = new Ship();
+        triangle = new Triangle(new Vector2(30,10), new Vector2(30,20), new Vector2(20,20));
+        walls = new Rectangle[4];
 
-        square = new Square(50, 50, v1, v2);
+        walls[0] = new Rectangle(450, 50);
+        walls[1] = new Rectangle(450, 50);
+        walls[2] = new Rectangle(50, 450);
+        walls[3] = new Rectangle(50, 450);
+
+        walls[0].translate(250, 450);
+        walls[1].translate(250, 50);
+        walls[2].translate(450, 250);
+        walls[3].translate(50, 250);
+        body = new Body();
+
     }
 
     @Override
-    public void update(GameContainer gameContainer, int i) throws SlickException {
-
+    public void update(GameContainer container, int delta) throws SlickException {
+        ship.update(this, container, delta);
     }
 
     @Override
-    public void render(GameContainer gameContainer, Graphics graphics) throws SlickException {
-        //drawVectory(graphics, v1, x, y);
-        //drawVectory(graphics, v2, x, y);
-        //drawVectory(graphics, v2.negate(), x, y);
-        square.draw(graphics);
+    public void render(GameContainer container, Graphics g) throws SlickException {
+        ship.render(container, g);
+        drawPolygon(g, triangle);
+        for(Rectangle rectangle : walls){
+            drawPolygon(g, rectangle);
+        }
+
 
     }
 
